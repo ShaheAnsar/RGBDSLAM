@@ -2,12 +2,16 @@ import numpy as np
 import vedo as v
 import pyunpack as pu
 import os
+import shutil
+import cv2
 
 class MobRGBD:
     def __init__(self, depth_path):
         self.depth_path = depth_path
         self.w = 512
         self.h = 424
+        self.DEPTH_MAX_VAL = 4500
+
 
     @staticmethod
     def __mobrgbd__find_depth_raw(path):
@@ -18,17 +22,19 @@ class MobRGBD:
     def init(self):
         depth_path = self.depth_path
         ar = pu.Archive(os.path.join(depth_path, "depth.raw.7z"))
-        output_dir = "extracted"
-        output_dir = os.path.join(self.depth_path, output_dir)
+        self.output_dir = "extracted"
+        self.output_dir = os.path.join(self.depth_path, self.output_dir)
         try:
-            os.mkdir(output_dir)
+            os.mkdir(self.output_dir)
         except FileExistsError:
             pass
             
-        ar.extractall(os.path.join(depth_path, output_dir))
-        self.depthfile = self.__mobrgbd__find_depth_raw(os.path.join(depth_path,
-                                                                output_dir))
+        ar.extractall(self.output_dir)
+        self.depthfile = self.__mobrgbd__find_depth_raw(self.output_dir)
         self.f = open(self.depthfile, "rb")
+
+    def cleanup(self):
+        shutil.rmtree(self.output_dir)
 
     def get_frame(self):
         h = self.h
@@ -38,3 +44,9 @@ class MobRGBD:
         frame = np.frombuffer(bslice, dtype=np.uint16)
         frame = frame.reshape(h, w)
         return frame
+
+    def play_all_frames(self):
+        while True:
+            frame = self.get_frame() * 10
+            cv2.imshow("frame", frame)
+            cv2.waitKey(10)

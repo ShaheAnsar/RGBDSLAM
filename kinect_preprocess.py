@@ -22,7 +22,8 @@ P2_IR = -0.002
 #Skew
 S_IR = 0
 
-IR_DEPTHSHIFT = 60.358
+#IR_DEPTHSHIFT = 60.358
+IR_DEPTHSHIFT = 110.0
 
 RMat = np.array([[0.99997, 0.00715, -0.00105],
     [-0.00715, 0.99995, 0.00662],
@@ -32,7 +33,7 @@ Tvec = np.array([-0.06015, 0.00221, 0.02714])
 #KinvMat = np.array([[1/FxIR, 
 
 def convert_from_uvd(u, v, d):
-    d += IR_DEPTHSHIFT
+    d -= IR_DEPTHSHIFT
     x_over_z = (CxIR - u)/FxIR
     y_over_z = (CyIR - v)/FyIR
     z = d / (1 + x_over_z**2 + y_over_z**2)
