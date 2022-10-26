@@ -5,7 +5,7 @@ import os
 import shutil
 import cv2
 
-class MobRGBD:
+class DepthData:
     def __init__(self, depth_path):
         self.depth_path = depth_path
         self.w = 512
@@ -50,3 +50,16 @@ class MobRGBD:
             frame = self.get_frame() * 10
             cv2.imshow("frame", frame)
             cv2.waitKey(10)
+
+class RGBData:
+    def __init__(self, yuv_path):
+        self.yuv_path = yuv_path
+        self.w = 1920
+        self.h = 1080
+
+    def init(self):
+        yuv_path = self.yuv_path
+        ar = pu.Archive(os.path.join(yuv_path, "video.raw.7z"))
+        self.output_dir = os.path.join(yuv_path, "extracted")
+        output_dir = self.output_dir
+        ar.extractall(output_dir)
