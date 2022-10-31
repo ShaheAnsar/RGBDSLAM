@@ -13,6 +13,7 @@ from time import perf_counter
 import kinect_preprocess as p
 import internal_math as im
 import json
+import open3d as o3d
 
 
 ASSET_DIR = "assets"
@@ -35,7 +36,18 @@ params = json.load(f)
 f.close()
 ir_params = params["IR"]
 rgb_params = params["COLOR"]
-
+o3d_rgb1 = o3d.geometry.Image(cv2.cvtColor(fr1_rgb, cv2.COLOR_BGR2RGB))
+o3d_rgb2 = o3d.geometry.Image(cv2.cvtColor(fr2_rgb, cv2.COLOR_BGR2RGB))
+o3d_depth1 = o3d.geometry.Image(fr1_depth)
+o3d_depth2 = o3d.geometry.Image(fr2_depth)
+rgbd1 = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb1, o3d_depth1, convert_rgb_to_intensity=False)
+rgbd2 = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb2, o3d_depth2, convert_rgb_to_intensity=False)
+pcd1 = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd1, o3d.camera.PinholeCameraIntrinsic(512,424,ir_params["fx"], ir_params["fy"], ir_params["cx"], ir_params["cy"]))
+print(fr1_rgb.shape)
+fr1_rgb = cv2.cvtColor(fr1_rgb, cv2.COLOR_BGR2RGB)
+pcd2 = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd2, o3d.camera.PinholeCameraIntrinsic(512,424,ir_params["fx"], ir_params["fy"], ir_params["cx"], ir_params["cy"]))
+o3d.visualization.draw_geometries([pcd1])
+o3d.visualization.draw_geometries([pcd2])
 orb = cv2.ORB_create(nfeatures=500)
 kp, des = orb.detectAndCompute(fr1_rgb, None)
 kp2, des2 = orb.detectAndCompute(fr2_rgb, None)
@@ -154,6 +166,5 @@ print(Ts[:5])
 #print(np.random.choice(np.arange(0, fr1_keypoints.shape[0]), size=3, replace=False))
 
 #cv2.waitKey(0)
-dev.close()
 print("Hello")
 

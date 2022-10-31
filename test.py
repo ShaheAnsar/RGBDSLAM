@@ -10,6 +10,7 @@ import os
 from os import path
 import sys
 import json
+import open3d as o3d
 
 
 
@@ -35,20 +36,20 @@ with device.running():
             rgb_frame = frame
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-depth_undistorted, rgb_registered = device.registration.apply(rgb_frame, depth_frame, enable_filter=True)
-print(depth_undistorted.bytes_per_pixel, depth_undistorted.width, depth_undistorted.height)
-depth_arr = depth_frame.to_array()
-point_cloud = []
-for j in range(depth_arr.shape[0]):
-    for i in range(depth_arr.shape[1]):
-        point_cloud.append(get_xyz(depth_arr, j, i, ir_params))
-point_cloud=  np.array(point_cloud)
-print(point_cloud.shape)
-indices = np.isnan(point_cloud)
-point_cloud = point_cloud[~indices]
-point_cloud = point_cloud.reshape((point_cloud.shape[0]//3,3))
-print(point_cloud)
-#point_cloud, rgb_cloud = convert_rgb_depth_to_pcl(device, rgb_frame, depth_frame)
+#depth_undistorted, rgb_registered = device.registration.apply(rgb_frame, depth_frame, enable_filter=True)
+#print(depth_undistorted.bytes_per_pixel, depth_undistorted.width, depth_undistorted.height)
+#depth_arr = depth_frame.to_array()
+#point_cloud = []
+#for j in range(depth_arr.shape[0]):
+#    for i in range(depth_arr.shape[1]):
+#        point_cloud.append(get_xyz(depth_arr, j, i, ir_params))
+point_cloud, rgb_cloud = convert_rgb_depth_to_pcl(device, rgb_frame, depth_frame)
 #pts = vedo.Points(point_cloud, c=rgb_cloud)
-pts = vedo.Points(point_cloud, c=(1.0, 0.0, 0.0))
-vedo.show(pts, __doc__, axes=True)
+#pts = vedo.Points(point_cloud, c=(1.0, 0.0, 0.0))
+#vedo.show(pts, __doc__, axes=True)
+pcd = o3d.geometry.PointCloud()
+pcd.points = o3d.utility.Vector3dVector(point_cloud)
+rgb_cloud = rgb_cloud.astype(np.float64)
+pcd.colors = o3d.utility.Vector3dVector(rgb_cloud/255.0)
+o3d.visualization.draw_geometries([pcd])
+o3d.visualization.draw_geometries([pcd])
