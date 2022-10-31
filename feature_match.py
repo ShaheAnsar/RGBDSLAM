@@ -84,7 +84,7 @@ result = o3d.pipelines.registration.registration_ransac_based_on_feature_matchin
         o3d.pipelines.registration.TransformationEstimationPointToPoint(False), 4, [
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_thresh)],
-        o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
+        o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999))
 
 # FAST Registration, is actually slow don't use
 #result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
@@ -94,4 +94,4 @@ t = perf_counter() - t
 print(result)
 print(t)
 draw_registration(pcd1, pcd2, np.identity(4))
-draw_registration(pcd1, pcd2, result.transformation)
+draw_registration(pcd1, pcd2, result.transformation, uniform_colors=False)
