@@ -10,8 +10,6 @@ def convert_rgb_depth_to_pcl(device, rgb_frame, depth_frame):
     indices = ~np.isnan(point_cloud)
     point_cloud = point_cloud[indices]
     rgb_cloud = rgb_registered.to_array()
-    cv2.imshow("RGB Reg", rgb_cloud)
-    cv2.waitKey(0)
     rgb_cloud = rgb_cloud[:,:,:3]
     rgb_cloud = cv2.cvtColor(rgb_cloud, cv2.COLOR_BGR2RGB)
     rgb_cloud = rgb_cloud[indices]
@@ -40,4 +38,18 @@ def get_depth(depth_undistorted, x, y):
     depth_x = t_x*depth_lr + (1-t_x)*depth_ll
     return 0.5*depth_x + 0.5*depth_y
 
-
+def get_xyz(depth_undistorted, r, c, ir_params):
+    r = m.floor(r)
+    c = m.floor(c)
+    cx = ir_params["cx"]
+    cy = ir_params["cy"]
+    ifx = 1/ir_params["fx"]
+    ify = 1/ir_params["fy"]
+    depth = depth_undistorted[r, c]
+    if depth <= 1 or np.isnan(depth):
+        return np.array([np.nan, np.nan, np.nan])
+    else:
+        x = (c + 0.5 - cx) * ifx * depth
+        y = (r + 0.5 - cy) * ify * depth
+        z = depth
+        return np.array([x, y ,z])

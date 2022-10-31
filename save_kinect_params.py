@@ -9,7 +9,7 @@ from mobrgbd import MobRGBD
 import os
 from os import path
 import sys
-import pickle
+import json
 
 
 DEPTH_MAX_VAL = 4500.0
@@ -34,14 +34,11 @@ with device.running():
             rgb_frame = frame
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-depth_undistorted, rgb_registered = device.registration.apply(rgb_frame, depth_frame, enable_filter=True)
-depth_undistorted = depth_undistorted.to_array()
-print(np.max(depth_undistorted))
-rgb_registered = rgb_registered.to_array()
-cv2.imwrite(path.join(ASSET_DIR, sys.argv[1] + "_rgb.png"), rgb_registered)
-with open(path.join(ASSET_DIR, sys.argv[1] + "_depth.npy"), "wb") as f:
-    np.save(f, depth_undistorted)
-#cv2.imwrite(path.join(ASSET_DIR, sys.argv[1] + "_depth.png"), depth_undistorted)
-#point_cloud, rgb_cloud = convert_rgb_depth_to_pcl(device, rgb_frame, depth_frame)
-#pts = vedo.Points(point_cloud, c=rgb_cloud)
-#vedo.show(pts, __doc__, axes=True)
+ir_params = device.ir_camera_params
+ir_params = {"fx": ir_params.fx, "fy": ir_params.fy, "cx": ir_params.cx, "cy": ir_params.cy, "k1": ir_params.k1, "k2": ir_params.k2, "k3": ir_params.k3, "p1": ir_params.p1, "p2": ir_params.p2}
+color_params = device.color_camera_params
+color_params = {"fx": color_params.fx, "fy": color_params.fy, "cx": color_params.cx, "cy": color_params.cy}
+kinect_params = {"IR":ir_params, "COLOR":color_params}
+f = open(path.join(ASSET_DIR, sys.argv[1]), "w")
+json.dump(kinect_params, f)
+f.close()

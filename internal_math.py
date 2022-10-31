@@ -41,3 +41,11 @@ def similarity_transform(from_points, to_points):
 
     return c*R, t
 
+# Takes in an array of 3D vectors and calculates the pairwise distance between every pair of vectors
+def get_pairwise_dist2(pts):
+    dists = []
+    for i in range(len(pts)):
+        for j in range(i + 1, len(pts)):
+            v = pts[i] - pts[j]
+            dists.append(np.dot(v,v))
+    return np.array(dists)
