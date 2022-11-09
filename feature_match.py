@@ -23,9 +23,9 @@ FR2_NAME = "fr2"
 PARAMS_NAME = "params.json"
 FR1_PATH = path.join(ASSET_DIR, FR1_NAME)
 FR2_PATH = path.join(ASSET_DIR, FR2_NAME)
-dev = Device()
-dev.start()
-dev.close()
+#dev = Device()
+#dev.start()
+#dev.close()
 
 # Import the data
 fr1_rgb = cv2.imread(FR1_PATH + "_rgb.png")
@@ -75,7 +75,7 @@ def draw_registration(pcd1, pcd2, tr, uniform_colors=True):
     o3d.visualization.draw_geometries([pcd1copy, pcd2copy])
 # Global Registration
 t = perf_counter()
-voxel_size = 0.1
+voxel_size = 0.05
 distance_thresh = 1.5*voxel_size
 pcd1down, pcd1feat, pcd2down, pcd2feat = prepare_data(pcd1, pcd2, voxel_size)
 # RANSAC Registraion
@@ -92,6 +92,7 @@ result = o3d.pipelines.registration.registration_ransac_based_on_feature_matchin
 #            maximum_correspondence_distance=distance_thresh))
 t = perf_counter() - t
 print(result)
+print(result.transformation)
 print(t)
 draw_registration(pcd1, pcd2, np.identity(4))
 draw_registration(pcd1, pcd2, result.transformation, uniform_colors=False)
