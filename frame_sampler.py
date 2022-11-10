@@ -66,16 +66,16 @@ class FrameSampler:
         self.next_frame_id += 1
 
     def __preprocess_frame(self, frame_set):
-       depth_undistorted, rgb_registered = self.dev.registration.apply(frame_set[0], frame_set[1], enable_filter=True)
-       depth_undistorted = depth_undistorted.to_array()
-       rgb_registered = rgb_registered.to_array()
-       o3d_rgb = o3d.geometry.Image(cv2.cvtColor(rgb_registered, cv2.COLOR_BGR2RGB))
-       o3d_depth = o3d.geometry.Image(depth_undistorted)
-       o3d_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb, o3d_depth, convert_rgb_to_intensity=False, depth_trunc=5.0)
-       ir_params = self.dev.ir_camera_params
-       o3d_pcl = o3d.geometry.PointCloud.create_from_rgbd_image(o3d_rgbd, o3d.camera.PinholeCameraIntrinsic(512, 424, ir_params.fx, ir_params.fx, ir_params.cx, ir_params.cy))
-       o3d_pcl, o3d_feat = self.__preprocess_pcl(o3d_pcl)
-       return o3d_pcl, o3d_feat
+        depth_undistorted, rgb_registered = self.dev.registration.apply(frame_set[0], frame_set[1], enable_filter=True)
+        depth_undistorted = depth_undistorted.to_array()
+        rgb_registered = rgb_registered.to_array()
+        o3d_rgb = o3d.geometry.Image(cv2.cvtColor(rgb_registered, cv2.COLOR_BGR2RGB))
+        o3d_depth = o3d.geometry.Image(depth_undistorted)
+        o3d_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb, o3d_depth, convert_rgb_to_intensity=False, depth_trunc=5.0)
+        ir_params = self.dev.ir_camera_params
+        o3d_pcl = o3d.geometry.PointCloud.create_from_rgbd_image(o3d_rgbd, o3d.camera.PinholeCameraIntrinsic(512, 424, ir_params.fx, ir_params.fx, ir_params.cx, ir_params.cy))
+        o3d_pcl, o3d_feat = self.__preprocess_pcl(o3d_pcl)
+        return o3d_pcl, o3d_feat
     
     def __preprocess_pcl(self, pcl):
         down = pcl.voxel_down_sample(self.VOXEL_SIZE)
