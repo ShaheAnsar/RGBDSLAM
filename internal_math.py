@@ -5,6 +5,7 @@
 """
 from __future__ import print_function
 import numpy as np
+import open3d as o3d
 
 def similarity_transform(from_points, to_points):
 
@@ -49,3 +50,11 @@ def get_pairwise_dist2(pts):
             v = pts[i] - pts[j]
             dists.append(np.dot(v,v))
     return np.array(dists)
+
+def similarity_transform_o3d(pcd1, pcd1feat, pcd2, pcd2feat, distance_thresh, ransac_iter=100000, ransac_p = 0.999):
+    result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(pcd1, pcd2, pcd1feat, pcd2feat, True, distance_thresh,
+            o3d.pipelines.registration.TransformationEstimationPointToPoint(False), 4, [
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_thresh)],
+            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999))
+    return result

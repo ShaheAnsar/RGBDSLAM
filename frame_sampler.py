@@ -5,6 +5,9 @@ import cv2
 import time as tm
 import freenect2 as fr2
 import json
+import internal_math as im
+from copy import deepcopy, copy
+from time import perf_counter
 
 
 #Maintains 15 frames, of which 12 are uniformly sampled and the remainig 3 are the most recent ones
@@ -21,7 +24,7 @@ class FrameSampler:
         # Time diff used to sample frames
         self.time_thresh = 0.0
         # Voxel size for downsampling
-        self.VOXEL_SIZE = 0.05
+        self.VOXEL_SIZE = 0.1
         # Distance thresholding
         self.DIST_THRESH = 1.5*self.VOXEL_SIZE
 
@@ -67,8 +70,8 @@ class FrameSampler:
 
     def __preprocess_frame(self, frame_set):
         depth_undistorted, rgb_registered = self.dev.registration.apply(frame_set[0], frame_set[1], enable_filter=True)
-        depth_undistorted = depth_undistorted.to_array()
-        rgb_registered = rgb_registered.to_array()
+        depth_undistorted = deepcopy(depth_undistorted.to_array())
+        rgb_registered = deepcopy(rgb_registered.to_array())
         o3d_rgb = o3d.geometry.Image(cv2.cvtColor(rgb_registered, cv2.COLOR_BGR2RGB))
         o3d_depth = o3d.geometry.Image(depth_undistorted)
         o3d_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb, o3d_depth, convert_rgb_to_intensity=False, depth_trunc=5.0)
@@ -82,3 +85,18 @@ class FrameSampler:
         down.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=self.VOXEL_SIZE*2,max_nn=30))
         down_features = o3d.pipelines.registration.compute_fpfh_feature(down, o3d.geometry.KDTreeSearchParamHybrid(radius=self.VOXEL_SIZE*5, max_nn=100))
         return down, down_features
+
+    def compare_and_push_frame(self, frame_set):
+        pcd1, pcd1feat = self.__preprocess_frame(frame_set)
+        best_rec = (0, 0)
+        for i in reversed(self.rframes):
+            res = im.similarity_transform_o3d(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
+            if res.fitness > best_rec[1]:
+                best_rec = (res, res.fitness)
+        best_uni = (0, 0) 
+        for i in self.frames[:self.ulen]:
+            res = im.similarity_transform_o3d(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
+            if res.fitness > best_uni[1]:
+                best_uni = (res, res.fitness)
+        self.push_frame(frame_set)
+        return (best_rec, best_uni)
