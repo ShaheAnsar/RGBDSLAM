@@ -88,15 +88,15 @@ class FrameSampler:
 
     def compare_and_push_frame(self, frame_set):
         pcd1, pcd1feat = self.__preprocess_frame(frame_set)
-        best_rec = (0, 0)
+        best_rec = (0, 0, 0)
         for i in reversed(self.rframes):
             res = im.similarity_transform_o3d(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
-            if res.fitness > best_rec[1]:
-                best_rec = (res, res.fitness)
-        best_uni = (0, 0) 
+            if best_rec[-1] == 0 or res.fitness > best_rec[-1].fitness:
+                best_rec = (i[0], i[1][0], res)
+        best_uni = (0, 0, 0) 
         for i in self.frames[:self.ulen]:
             res = im.similarity_transform_o3d(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
-            if res.fitness > best_uni[1]:
-                best_uni = (res, res.fitness)
+            if best_uni[-1] == 0 or res.fitness > best_uni[-1].fitness:
+                best_uni = (i[0], i[1][0], res)
         self.push_frame(frame_set)
-        return (best_rec, best_uni)
+        return (pcd1, best_rec, best_uni)
