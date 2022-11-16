@@ -26,7 +26,7 @@ class FrameSampler:
         # Voxel size for downsampling
         self.VOXEL_SIZE = 0.1
         # Distance thresholding
-        self.DIST_THRESH = 1.5*self.VOXEL_SIZE
+        self.DIST_THRESH = 0.02
 
     def push_frame(self, frame_set):
         timestamp = tm.process_time()
@@ -99,4 +99,5 @@ class FrameSampler:
             if best_uni[-1] == 0 or res.fitness > best_uni[-1].fitness:
                 best_uni = (i[0], i[1][0], res)
         self.push_frame(frame_set)
-        return (pcd1, best_rec, best_uni)
+        # Point Cloud data, Point Cloud ID, Best Recent Comp, Best Uniform Comp
+        return (pcd1, self.rframes[-1][0], best_rec, best_uni)
