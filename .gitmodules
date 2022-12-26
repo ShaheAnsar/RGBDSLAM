@@ -1,3 +1,6 @@
 [submodule "freenect2-python"]
 	path = freenect2-python
 	url = https://github.com/rjw57/freenect2-python
+[submodule "g2opy"]
+	path = g2opy
+	url = https://github.com/uoip/g2opy
