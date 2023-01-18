@@ -33,7 +33,7 @@ pg = PoseGraph()
 curr_pose = np.identity(4)
 loop_closure_rmse_thresh = 0.015
 loop_clousre_fitness_thresh = 0.02
-odometry_fitness_thresh = 0.05
+odometry_fitness_thresh = 0.02
 with device.running(frame_callback):
     frame_set = [None, None]
     i = 0
@@ -69,7 +69,11 @@ with device.running(frame_callback):
                 pprint(curr_pose)
                 n = Node(r[1], r[0], curr_pose)
                 pg.insert_node(n)
-                e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness))
+                e = None
+                if fitness >= odometry_fitness_thresh:
+                    e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness))
+                else:
+                    e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness), Edge.ETYPE_BROKEN)
                 pg.add_edge(e)
 
             if r is not None and i >= 12 and r[3][2].fitness >= loop_clousre_fitness_thresh and r[3][2].inlier_rmse <= loop_closure_rmse_thresh:
@@ -95,7 +99,7 @@ r = pg.optimize()
 print(pg.nodes)
 pg.visualize()
 cv2.waitKey(0)
-#pg.visualize_edges()
+pg.visualize_edges()
 pg.optimized_visualize()
 cv2.waitKey(0)
 print(r)

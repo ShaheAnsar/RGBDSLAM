@@ -58,7 +58,7 @@ def get_pairwise_dist2(pts):
 #                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_thresh)],
 #            o3d.pipelines.registration.RANSACConvergenceCriteria(ransac_iter, ransac_p))
 #    return result
-def similarity_transform_o3d_rough(pcd1, pcd1feat, pcd2, pcd2feat, distance_thresh, ransac_iter=100000, ransac_p = 0.999):
+def similarity_transform_o3d_rough(pcd1, pcd1feat, pcd2, pcd2feat, distance_thresh):
     result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
             pcd1, pcd2, pcd1feat, pcd2feat, o3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_thresh))

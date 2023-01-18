@@ -25,6 +25,7 @@ class Node:
 class Edge:
     ETYPE_NORMAL = 1
     ETYPE_LOOP = 2
+    ETYPE_BROKEN = 3
     # n1 - Index of Node 1 in the list of nodes in the graph
     # n2 - Same as above but for Node 2
     # relative_transform - Transformation between n1 and n2
@@ -116,14 +117,17 @@ class PoseGraph:
         prior_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.3)
         odometry_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.3)
         loop_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.6)
+        broken_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*1000)
         print(prior_noise)
         init_rot = gs.Rot3(np.identity(3))
         graph.add(gs.PriorFactorPose3(1, gs.Pose3(init_rot, np.zeros(3)), prior_noise))
         for e in self.edges:
             if e.etype == Edge.ETYPE_NORMAL:
                 graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), odometry_noise))
-            else:
+            elif e.etype == Edge.ETYPE_LOOP:
                 graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), loop_noise))
+            else:
+                graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), broken_noise))
 
         self.fgraph = graph
 
