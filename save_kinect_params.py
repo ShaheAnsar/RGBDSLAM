@@ -1,7 +1,6 @@
 from freenect2 import Device, FrameType
 import numpy as np
 import cv2
-import vedo
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import proj3d
 from kinect_preprocess import *

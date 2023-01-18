@@ -1,7 +1,6 @@
 from freenect2 import Device, FrameType
 import numpy as np
 import cv2
-import vedo
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import proj3d
 from kinect_preprocess import *
@@ -32,7 +31,9 @@ fr = FrameSampler(device)
 t = process_time()
 pg = PoseGraph()
 curr_pose = np.identity(4)
-loop_closure_thresh = 0.7
+loop_closure_rmse_thresh = 0.015
+loop_clousre_fitness_thresh = 0.02
+odometry_fitness_thresh = 0.05
 with device.running(frame_callback):
     frame_set = [None, None]
     i = 0
@@ -47,45 +48,57 @@ with device.running(frame_callback):
             dt = process_time() - t
             t = process_time()
             print(f"Time for frame: {dt}")
-            r = fr.compare_and_push_frame(frame_set)
+            r = None
             #print(r)
             # For the first iteration just insert the first node, and assume position is 0
             if i == 0:
-                n = Node(r[1], r[0], curr_pose)
+                pcd1, _ = fr.preprocess_frame(frame_set)
+                fr.push_frame(frame_set)
+                n = Node(0, pcd1, curr_pose)
                 pg.insert_node(n)
             # Only use the recent frames if the uniform set isn't ready for processing yet
             else:
                 # Visual Odometry
+                r = fr.compare_and_push_frame(frame_set)
                 pcl_id = r[2][0]
                 transform = r[2][2].transformation
+                rmse = r[2][2].inlier_rmse
+                fitness = r[2][2].fitness
                 n_prev_i, n_prev = pg.get_node_and_index(pcl_id)
-                curr_pose = np.dot(n_prev.pose, transform)
+                curr_pose = np.dot(transform, n_prev.pose)
                 pprint(curr_pose)
                 n = Node(r[1], r[0], curr_pose)
                 pg.insert_node(n)
-                e = Edge(n_prev_i, len(pg.nodes) - 1, transform)
+                e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness))
                 pg.add_edge(e)
 
-            if i >= 12 and r[3][2].fitness >= loop_closure_thresh:
+            if r is not None and i >= 12 and r[3][2].fitness >= loop_clousre_fitness_thresh and r[3][2].inlier_rmse <= loop_closure_rmse_thresh:
                 # Loop closure
                 pcl_id = r[3][0]
                 transform = r[3][2].transformation
+                rmse = r[3][2].inlier_rmse
+                fitness = r[3][2].fitness
                 n_prev_i, n_prev = pg.get_node_and_index(pcl_id)
-                e = Edge(n_prev_i, len(pg.nodes) - 1, transform)
+                e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness), Edge.ETYPE_LOOP)
                 pg.add_edge(e)
 
-            if i >= 30:
+            if i >= 35:
                 break
 
             frame_set = [None, None]
             i += 1
 
+pg.store("assets/graph.pickle")
+pg = PoseGraph.load("assets/graph.pickle")
+pg.construct_factor_graph()
+r = pg.optimize()
+print(pg.nodes)
 pg.visualize()
 cv2.waitKey(0)
-pg.store("assets/graph.pickle")
-pg2 = PoseGraph.load("assets/graph.pickle")
-pg2.visualize()
+#pg.visualize_edges()
+pg.optimized_visualize()
 cv2.waitKey(0)
+print(r)
 ##depth_undistorted, rgb_registered = device.registration.apply(rgb_frame, depth_frame, enable_filter=True)
 ##print(depth_undistorted.bytes_per_pixel, depth_undistorted.width, depth_undistorted.height)
 ##depth_arr = depth_frame.to_array()

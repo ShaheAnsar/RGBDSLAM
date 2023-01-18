@@ -1,5 +1,4 @@
 import numpy as np
-import vedo as v
 import pyunpack as pu
 import os
 import shutil

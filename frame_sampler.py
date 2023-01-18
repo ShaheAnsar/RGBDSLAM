@@ -8,6 +8,7 @@ import json
 import internal_math as im
 from copy import deepcopy, copy
 from time import perf_counter
+from pprint import pprint
 
 
 #Maintains 15 frames, of which 12 are uniformly sampled and the remainig 3 are the most recent ones
@@ -36,7 +37,7 @@ class FrameSampler:
         else:
             delta_time = timestamp - self.frames[self.curr_i-1][2]
         
-        pcl = self.__preprocess_frame(frame_set)
+        pcl = self.preprocess_frame(frame_set)
 
         # Push it into the uniform sampling buffer
         if len(self.frames) < 2*self.ulen:
@@ -68,7 +69,7 @@ class FrameSampler:
 
         self.next_frame_id += 1
 
-    def __preprocess_frame(self, frame_set):
+    def preprocess_frame(self, frame_set):
         depth_undistorted, rgb_registered = self.dev.registration.apply(frame_set[0], frame_set[1], enable_filter=True)
         depth_undistorted = deepcopy(depth_undistorted.to_array())
         rgb_registered = deepcopy(rgb_registered.to_array())
@@ -77,8 +78,8 @@ class FrameSampler:
         o3d_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb, o3d_depth, convert_rgb_to_intensity=False, depth_trunc=5.0)
         ir_params = self.dev.ir_camera_params
         o3d_pcl = o3d.geometry.PointCloud.create_from_rgbd_image(o3d_rgbd, o3d.camera.PinholeCameraIntrinsic(512, 424, ir_params.fx, ir_params.fx, ir_params.cx, ir_params.cy))
-        o3d_pcl, o3d_feat = self.__preprocess_pcl(o3d_pcl)
-        return o3d_pcl, o3d_feat
+        o3d_pcd, o3d_feat = self.__preprocess_pcl(o3d_pcl)
+        return o3d_pcd, o3d_feat
     
     def __preprocess_pcl(self, pcl):
         down = pcl.voxel_down_sample(self.VOXEL_SIZE)
@@ -87,17 +88,24 @@ class FrameSampler:
         return down, down_features
 
     def compare_and_push_frame(self, frame_set):
-        pcd1, pcd1feat = self.__preprocess_frame(frame_set)
+        pcd1, pcd1feat = self.preprocess_frame(frame_set)
         best_rec = (0, 0, 0)
-        for i in reversed(self.rframes):
-            res = im.similarity_transform_o3d(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
-            if best_rec[-1] == 0 or res.fitness > best_rec[-1].fitness:
-                best_rec = (i[0], i[1][0], res)
+        #for i in reversed(self.rframes):
+        #    res = im.similarity_transform_o3d_rough(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
+        #    if best_rec[-1] == 0 or res.fitness > best_rec[-1].fitness:
+        #        best_rec = (i[0], i[1][0], res)
+        rres = im.similarity_transform_o3d_rough(pcd1, pcd1feat, self.rframes[-1][1][0], self.rframes[-1][1][1], self.DIST_THRESH)
+        best_rec = (self.rframes[-1][0], self.rframes[-1][1][0], rres)
+        rres = im.similarity_transform_o3d_precise(pcd1, best_rec[1], self.DIST_THRESH, best_rec[-1].transformation)
+        print(f"Result: {rres.fitness}, {rres.inlier_rmse}")
+        best_rec = (best_rec[0], best_rec[1], rres)
         best_uni = (0, 0, 0) 
         for i in self.frames[:self.ulen]:
-            res = im.similarity_transform_o3d(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
+            res = im.similarity_transform_o3d_rough(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
             if best_uni[-1] == 0 or res.fitness > best_uni[-1].fitness:
                 best_uni = (i[0], i[1][0], res)
+        ures = im.similarity_transform_o3d_precise(pcd1, best_uni[1], self.DIST_THRESH, best_uni[-1].transformation)
+        best_uni = (best_uni[0], best_uni[1], ures)
         self.push_frame(frame_set)
         # Point Cloud data, Point Cloud ID, Best Recent Comp, Best Uniform Comp
         return (pcd1, self.rframes[-1][0], best_rec, best_uni)

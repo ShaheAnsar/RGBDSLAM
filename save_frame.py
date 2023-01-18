@@ -1,7 +1,6 @@
 from freenect2 import Device, FrameType
 import numpy as np
 import cv2
-import vedo
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import proj3d
 from kinect_preprocess import *
@@ -43,5 +42,3 @@ with open(path.join(ASSET_DIR, sys.argv[1] + "_depth.npy"), "wb") as f:
     np.save(f, depth_undistorted)
 #cv2.imwrite(path.join(ASSET_DIR, sys.argv[1] + "_depth.png"), depth_undistorted)
 #point_cloud, rgb_cloud = convert_rgb_depth_to_pcl(device, rgb_frame, depth_frame)
-#pts = vedo.Points(point_cloud, c=rgb_cloud)
-#vedo.show(pts, __doc__, axes=True)
