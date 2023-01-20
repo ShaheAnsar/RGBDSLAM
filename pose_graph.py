@@ -81,23 +81,28 @@ class PoseGraph:
 
         raise RuntimeError(f"Node doesn't exist, PCL ID: {pcl_id}")
 
-    def visualize(self, voxel_size=0.05):
+    def visualize(self, voxel_size=0.05, uniform_color = False):
         pcd = deepcopy(self.nodes[0].pcl)
         for n in self.nodes[1:]:
             pcd2 = deepcopy(n.pcl)
             pcd2.transform(n.pose)
             pcd += pcd2
         pcd.voxel_down_sample(voxel_size)
+        if uniform_color:
+            pcd.paint_uniform_color([0.3, 0.3, 0.3])
         o3d.visualization.draw_geometries([pcd])
 
-    def optimized_visualize(self, voxel_size=0.05):
+    def optimized_visualize(self, voxel_size=0.05, uniform_color = False):
         pcd = deepcopy(self.nodes[0].pcl)
         for n in self.nodes[1:]:
             pcd2 = deepcopy(n.pcl)
             pcd2.transform(n.oPose)
             pcd += pcd2
         pcd.voxel_down_sample(voxel_size)
+        if uniform_color:
+            pcd.paint_uniform_color([0.3, 0.3, 0.3])
         o3d.visualization.draw_geometries([pcd])
+        return pcd
 
     def store(self, fname):
         asset_dir = "assets"
