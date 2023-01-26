@@ -32,7 +32,7 @@ t = process_time()
 pg = PoseGraph()
 curr_pose = np.identity(4)
 loop_closure_rmse_thresh = 0.015
-loop_clousre_fitness_thresh = 0.02
+loop_clousre_fitness_thresh = 0.9
 odometry_fitness_thresh = 0.02
 with device.running(frame_callback):
     frame_set = [None, None]

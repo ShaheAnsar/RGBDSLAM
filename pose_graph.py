@@ -121,7 +121,7 @@ class PoseGraph:
         graph = gs.NonlinearFactorGraph()
         prior_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.3)
         odometry_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.3)
-        loop_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.6)
+        loop_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*3)
         broken_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*1000)
         print(prior_noise)
         init_rot = gs.Rot3(np.identity(3))

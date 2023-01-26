@@ -94,14 +94,14 @@ class FrameSampler:
         #    res = im.similarity_transform_o3d_rough(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
         #    if best_rec[-1] == 0 or res.fitness > best_rec[-1].fitness:
         #        best_rec = (i[0], i[1][0], res)
-        rres = im.similarity_transform_o3d_rough(pcd1, pcd1feat, self.rframes[-1][1][0], self.rframes[-1][1][1], self.DIST_THRESH)
+        rres = im.similarity_transform_o3d_rough(pcd1, pcd1feat, self.rframes[-1][1][0], self.rframes[-1][1][1], self.DIST_THRESH * 5)
         best_rec = (self.rframes[-1][0], self.rframes[-1][1][0], rres)
         rres = im.similarity_transform_o3d_precise(pcd1, best_rec[1], self.DIST_THRESH, best_rec[-1].transformation)
         print(f"Result: {rres.fitness}, {rres.inlier_rmse}")
         best_rec = (best_rec[0], best_rec[1], rres)
         best_uni = (0, 0, 0) 
         for i in self.frames[:self.ulen]:
-            res = im.similarity_transform_o3d_rough(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
+            res = im.similarity_transform_o3d_rough(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH * 5)
             if best_uni[-1] == 0 or res.fitness > best_uni[-1].fitness:
                 best_uni = (i[0], i[1][0], res)
         ures = im.similarity_transform_o3d_precise(pcd1, best_uni[1], self.DIST_THRESH, best_uni[-1].transformation)
