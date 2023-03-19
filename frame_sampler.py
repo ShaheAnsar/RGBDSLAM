@@ -97,7 +97,10 @@ class FrameSampler:
         rres = im.similarity_transform_o3d_rough(pcd1, pcd1feat, self.rframes[-1][1][0], self.rframes[-1][1][1], self.DIST_THRESH * 5)
         best_rec = (self.rframes[-1][0], self.rframes[-1][1][0], rres)
         rres = im.similarity_transform_o3d_precise(pcd1, best_rec[1], self.DIST_THRESH, best_rec[-1].transformation)
-        print(f"Result: {rres.fitness}, {rres.inlier_rmse}")
+        if rres is None:
+            print(f"Broken edge")
+        else:
+            print(f"Result: {rres.fitness}, {rres.inlier_rmse}")
         best_rec = (best_rec[0], best_rec[1], rres)
         best_uni = (0, 0, 0) 
         for i in self.frames[:self.ulen]:

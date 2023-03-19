@@ -31,8 +31,8 @@ fr = FrameSampler(device)
 t = process_time()
 pg = PoseGraph()
 curr_pose = np.identity(4)
-loop_closure_rmse_thresh = 0.015
-loop_clousre_fitness_thresh = 0.9
+loop_closure_rmse_thresh = 0.05
+loop_clousre_fitness_thresh = 0.1
 odometry_fitness_thresh = 0.02
 with device.running(frame_callback):
     frame_set = [None, None]
@@ -76,7 +76,7 @@ with device.running(frame_callback):
                     e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness), Edge.ETYPE_BROKEN)
                 pg.add_edge(e)
 
-            if r is not None and i >= 12 and r[3][2].fitness >= loop_clousre_fitness_thresh and r[3][2].inlier_rmse <= loop_closure_rmse_thresh:
+            if r is not None and i >= 12 and r[3][2] is not None and r[3][2].fitness >= loop_clousre_fitness_thresh and r[3][2].inlier_rmse <= loop_closure_rmse_thresh:
                 # Loop closure
                 pcl_id = r[3][0]
                 transform = r[3][2].transformation
@@ -86,7 +86,7 @@ with device.running(frame_callback):
                 e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness), Edge.ETYPE_LOOP)
                 pg.add_edge(e)
 
-            if i >= 35:
+            if i >= 100:
                 break
 
             frame_set = [None, None]

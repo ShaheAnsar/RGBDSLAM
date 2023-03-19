@@ -32,7 +32,10 @@ pg.visualize(voxel_size=0.01)
 cv2.waitKey(0)
 if "-e" in sys.argv:
     print("Edges")
-    pg.visualize_edges()
+    if "-c" in sys.argv:
+        pg.visualize_edges(uniform_color=False)
+    else:
+        pg.visualize_edges()
 print("Optimized map")
 pg.construct_factor_graph()
 pg.optimize()

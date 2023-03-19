@@ -65,5 +65,10 @@ def similarity_transform_o3d_rough(pcd1, pcd1feat, pcd2, pcd2feat, distance_thre
     return result
 
 def similarity_transform_o3d_precise(pcd1, pcd2, distance_thresh, init_trans):
-    result = o3d.pipelines.registration.registration_icp(pcd1, pcd2, distance_thresh, init_trans, o3d.pipelines.registration.TransformationEstimationPointToPlane())
+    crit = o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=100)
+    result = None
+    try:
+        result = o3d.pipelines.registration.registration_colored_icp(pcd1, pcd2, distance_thresh, init_trans, o3d.pipelines.registration.TransformationEstimationForColoredICP(), crit)
+    except Exception as e:
+        pass
     return result

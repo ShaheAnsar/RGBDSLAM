@@ -147,14 +147,15 @@ class PoseGraph:
         return result
     
     # Visualize every edge with the transform applied
-    def visualize_edges(self):
+    def visualize_edges(self, uniform_color = True):
         for i, e in enumerate( self.edges ):
             n1 = self.nodes[e.edge[0]]
             n2 = self.nodes[e.edge[1]]
             pcd1 = deepcopy(n1.pcl)
             pcd2 = deepcopy(n2.pcl)
-            pcd1.paint_uniform_color([1.0, 0.0, 0.0])
-            pcd2.paint_uniform_color([0.0, 1.0, 0.0])
+            if uniform_color:
+                pcd1.paint_uniform_color([1.0, 0.0, 0.0])
+                pcd2.paint_uniform_color([0.0, 1.0, 0.0])
             pcd2.transform(e.transform)
             o3d.visualization.draw_geometries([pcd1, pcd2])
             print(f"Edge {i}, Type: {e.etype}, Stats {e.stats}")

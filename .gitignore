@@ -6,3 +6,4 @@ log.txt
 assets/*
 stats
 notes.md
+*.bk*
