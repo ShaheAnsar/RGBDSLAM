@@ -4,6 +4,8 @@ __pycache__/*
 build
 log.txt
 assets/*
+assets*
+assets*/*
 stats
 notes.md
 *.bk*
