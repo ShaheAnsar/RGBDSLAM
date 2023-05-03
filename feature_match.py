@@ -94,5 +94,10 @@ t = perf_counter() - t
 print(result)
 print(result.transformation)
 print(t)
+cv_tr = np.array([[0.968581, 0.035594, -0.24614, 0.0769454],
+                  [-0.0344965, 0.999366, 0.00877052, -0.0768757],
+                  [0.246296, -3.99053e-6, 0.969195, 0.00132942],
+                  [0, 0, 0, 1]])
 draw_registration(pcd1, pcd2, np.identity(4))
+draw_registration(pcd1, pcd2, cv_tr, uniform_colors=False)
 draw_registration(pcd1, pcd2, result.transformation, uniform_colors=False)

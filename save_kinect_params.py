@@ -41,3 +41,4 @@ kinect_params = {"IR":ir_params, "COLOR":color_params}
 f = open(path.join(ASSET_DIR, sys.argv[1]), "w")
 json.dump(kinect_params, f)
 f.close()
+print(color_params)

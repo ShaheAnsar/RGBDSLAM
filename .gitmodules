@@ -4,3 +4,9 @@
 [submodule "g2opy"]
 	path = g2opy
 	url = https://github.com/uoip/g2opy
+[submodule "third_party/libnpy"]
+	path = third_party/libnpy
+	url = https://github.com/llohse/libnpy
+[submodule "third_party/Xoshiro-cpp"]
+	path = third_party/Xoshiro-cpp
+	url = https://github.com/Reputeless/Xoshiro-cpp
