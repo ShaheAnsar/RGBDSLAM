@@ -52,28 +52,34 @@ with device.running(frame_callback):
             #print(r)
             # For the first iteration just insert the first node, and assume position is 0
             if i == 0:
-                pcd1, _ = fr.preprocess_frame(frame_set)
+                pcd1, _, pcl1 = fr.preprocess_frame(frame_set)
                 fr.push_frame(frame_set)
-                n = Node(0, pcd1, curr_pose)
+                n = Node(0, pcd1, curr_pose, pcl1)
                 pg.insert_node(n)
             # Only use the recent frames if the uniform set isn't ready for processing yet
             else:
                 # Visual Odometry
                 r = fr.compare_and_push_frame(frame_set)
                 pcl_id = r[2][0]
-                transform = r[2][2].transformation
-                rmse = r[2][2].inlier_rmse
-                fitness = r[2][2].fitness
+                rres = r[2][2]
+                if rres is not None:
+                    transform = r[2][2].transformation
+                    rmse = r[2][2].inlier_rmse
+                    fitness = r[2][2].fitness
+                else:
+                    transform = np.eye(4)
+                    rmse = 10000000.0
+                    fitnes = 0
                 n_prev_i, n_prev = pg.get_node_and_index(pcl_id)
                 curr_pose = np.dot(transform, n_prev.pose)
                 pprint(curr_pose)
-                n = Node(r[1], r[0], curr_pose)
+                n = Node(r[1], r[0], curr_pose, r[4])
                 pg.insert_node(n)
                 e = None
                 if fitness >= odometry_fitness_thresh:
-                    e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness))
+                    e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness, r[5]))
                 else:
-                    e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness), Edge.ETYPE_BROKEN)
+                    e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness, r[5]), Edge.ETYPE_BROKEN)
                 pg.add_edge(e)
 
             if r is not None and i >= 12 and r[3][2] is not None and r[3][2].fitness >= loop_clousre_fitness_thresh and r[3][2].inlier_rmse <= loop_closure_rmse_thresh:
@@ -83,7 +89,7 @@ with device.running(frame_callback):
                 rmse = r[3][2].inlier_rmse
                 fitness = r[3][2].fitness
                 n_prev_i, n_prev = pg.get_node_and_index(pcl_id)
-                e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness), Edge.ETYPE_LOOP)
+                e = Edge(n_prev_i, len(pg.nodes) - 1, transform, (rmse, fitness, r[5]), Edge.ETYPE_LOOP)
                 pg.add_edge(e)
 
             if i >= 100:

@@ -78,8 +78,10 @@ class FrameSampler:
         o3d_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(o3d_rgb, o3d_depth, convert_rgb_to_intensity=False, depth_trunc=5.0)
         ir_params = self.dev.ir_camera_params
         o3d_pcl = o3d.geometry.PointCloud.create_from_rgbd_image(o3d_rgbd, o3d.camera.PinholeCameraIntrinsic(512, 424, ir_params.fx, ir_params.fx, ir_params.cx, ir_params.cy))
+        valid_indices = np.where(np.all(np.asarray(o3d_pcl.colors) != (0.0, 0.0, 0.0), axis=-1))[0]
+        o3d_pcl = o3d_pcl.select_by_index(valid_indices)
         o3d_pcd, o3d_feat = self.__preprocess_pcl(o3d_pcl)
-        return o3d_pcd, o3d_feat
+        return o3d_pcd, o3d_feat, o3d_pcl
     
     def __preprocess_pcl(self, pcl):
         down = pcl.voxel_down_sample(self.VOXEL_SIZE)
@@ -88,7 +90,17 @@ class FrameSampler:
         return down, down_features
 
     def compare_and_push_frame(self, frame_set):
-        pcd1, pcd1feat = self.preprocess_frame(frame_set)
+        pcd1, pcd1feat, pcl1 = self.preprocess_frame(frame_set)
+        rec_uncertainty = 300/pcd1feat.num()
+        #rec_uncertainty = 10000
+        #if pcd1feat.num() < 600:
+        #    rec_uncertainty = 100.0
+        #elif pcd1feat.num() < 1000:
+        #    rec_uncertainty = 1.0
+        #else:
+        #    rec_uncertainty = 0.03
+
+
         best_rec = (0, 0, 0)
         #for i in reversed(self.rframes):
         #    res = im.similarity_transform_o3d_rough(pcd1, pcd1feat, i[1][0], i[1][1], self.DIST_THRESH)
@@ -111,4 +123,4 @@ class FrameSampler:
         best_uni = (best_uni[0], best_uni[1], ures)
         self.push_frame(frame_set)
         # Point Cloud data, Point Cloud ID, Best Recent Comp, Best Uniform Comp
-        return (pcd1, self.rframes[-1][0], best_rec, best_uni)
+        return (pcd1, self.rframes[-1][0], best_rec, best_uni, pcl1, rec_uncertainty)

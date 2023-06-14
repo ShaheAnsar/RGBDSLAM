@@ -39,7 +39,7 @@ if "-e" in sys.argv:
 print("Optimized map")
 pg.construct_factor_graph()
 pg.optimize()
-pcd = pg.optimized_visualize(voxel_size=0.01, uniform_color=False)
+pcd = pg.optimized_visualize(voxel_size=0.01, uniform_color=False, full_res=True)
 cv2.waitKey(0)
 grid_map = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, 0.05)
 o3d.visualization.draw_geometries([grid_map])

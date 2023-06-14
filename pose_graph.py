@@ -9,8 +9,9 @@ import transforms3d as t3d
 import gtsam as gs
 
 class Node:
-    def __init__(self, pcl_id, pcl, pose):
+    def __init__(self, pcl_id, pcl, pose, opcl):
         self.pcl = pcl
+        self.opcl = opcl
         self.pcl_id = pcl_id
         self.pose = pose
         T, R, Z, S = t3d.affines.decompose44(pose)
@@ -33,7 +34,6 @@ class Edge:
         self.edge = (n1, n2)
         self.transform = relative_transform
         self.etype = etype
-        self.info_matrix = np.identity(4)
         self.stats = stats
         self.decompose()
 
@@ -87,18 +87,29 @@ class PoseGraph:
             pcd2 = deepcopy(n.pcl)
             pcd2.transform(n.pose)
             pcd += pcd2
-        pcd.voxel_down_sample(voxel_size)
+        pcd = pcd.voxel_down_sample(voxel_size)
         if uniform_color:
             pcd.paint_uniform_color([0.3, 0.3, 0.3])
         o3d.visualization.draw_geometries([pcd])
 
-    def optimized_visualize(self, voxel_size=0.05, uniform_color = False):
-        pcd = deepcopy(self.nodes[0].pcl)
+    def optimized_visualize(self, voxel_size=0.05, uniform_color = False, full_res = False):
+        pcd = None
+        if full_res:
+            pcd = deepcopy(self.nodes[0].opcl)
+        else:
+            pcd = deepcopy(self.nodes[0].pcl)
+        #pcd = pcd.voxel_down_sample(voxel_size)
         for n in self.nodes[1:]:
-            pcd2 = deepcopy(n.pcl)
+            pcd2 = None
+            if full_res:
+                pcd2 = deepcopy(n.opcl)
+                pcd2 = pcd2.voxel_down_sample(voxel_size)
+            else:
+                pcd2 = deepcopy(n.pcl)
             pcd2.transform(n.oPose)
             pcd += pcd2
-        pcd.voxel_down_sample(voxel_size)
+        pcd = pcd.voxel_down_sample(voxel_size)
+        pcd = pcd.remove_duplicated_points()
         if uniform_color:
             pcd.paint_uniform_color([0.3, 0.3, 0.3])
         o3d.visualization.draw_geometries([pcd])
@@ -109,9 +120,12 @@ class PoseGraph:
         self.pickle_dict["nodes"] = []
         for n in self.nodes:
             fname_pcl = f"pcl_{n.pcl_id}.pcd"
+            fname_opcl = f"opcl_{n.pcl_id}.pcd"
             fname_pcl = path.join(asset_dir, fname_pcl)
-            self.pickle_dict["nodes"].append((fname_pcl, n.pose, n.pcl_id))
+            fname_opcl = path.join(asset_dir, fname_opcl)
+            self.pickle_dict["nodes"].append((fname_pcl, fname_opcl, n.pose, n.pcl_id))
             o3d.io.write_point_cloud(fname_pcl, n.pcl)
+            o3d.io.write_point_cloud(fname_opcl, n.opcl)
         self.pickle_dict["edges"] = self.edges
         pic = pickle.dumps(self.pickle_dict)
         with open(fname, "wb") as f:
@@ -119,18 +133,19 @@ class PoseGraph:
 
     def construct_factor_graph(self):
         graph = gs.NonlinearFactorGraph()
-        prior_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.3)
-        odometry_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.3)
-        loop_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*3)
-        broken_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*1000)
-        print(prior_noise)
+        prior_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.03)
+        odometry_noise_low = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*0.03)
+        loop_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*1000)
+        broken_noise = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*100000000)
         init_rot = gs.Rot3(np.identity(3))
         graph.add(gs.PriorFactorPose3(1, gs.Pose3(init_rot, np.zeros(3)), prior_noise))
         for e in self.edges:
             if e.etype == Edge.ETYPE_NORMAL:
-                graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), odometry_noise))
+                noise_model = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*e.stats[2])
+                graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), noise_model))
             elif e.etype == Edge.ETYPE_LOOP:
-                graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), loop_noise))
+                noise_model = gs.noiseModel.Diagonal.Sigmas(np.ones(6)*e.stats[2] * 20)
+                graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), noise_model))
             else:
                 graph.add(gs.BetweenFactorPose3(e.edge[0] + 1, e.edge[1] + 1, gs.Pose3(gs.Rot3( e.R ), e.T), broken_noise))
 
@@ -172,7 +187,8 @@ class PoseGraph:
         for e in d["edges"]:
             pg.add_edge(e)
 
-        for pcl_fname, pose, pcl_id in d["nodes"]:
+        for pcl_fname, opcl_fname, pose, pcl_id in d["nodes"]:
             pcl = o3d.io.read_point_cloud(pcl_fname)
-            pg.insert_node(Node(pcl_id, pcl, pose))
+            opcl = o3d.io.read_point_cloud(opcl_fname)
+            pg.insert_node(Node(pcl_id, pcl, pose, opcl))
         return pg

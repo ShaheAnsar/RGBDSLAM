@@ -51,11 +51,18 @@ pcd2 = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd2, o3d.camera.PinholeC
 
 fr1_rgb = cv2.cvtColor(fr1_rgb, cv2.COLOR_BGR2RGB)
 
+valid_indices1 = np.where(np.all(np.asarray(pcd1.colors) != (0.0, 0.0, 0.0), axis=-1))[0]
+valid_indices2 = np.where(np.all(np.asarray(pcd2.colors) != (0.0, 0.0, 0.0), axis=-1))[0]
+pcd1 = pcd1.select_by_index(valid_indices1.tolist())
+pcd2 = pcd2.select_by_index(valid_indices2.tolist())
+
 o3d.visualization.draw_geometries([pcd1])
 o3d.visualization.draw_geometries([pcd2])
 
 def preprocess_pcl(pcl, voxel_size):
     down = pcl.voxel_down_sample(voxel_size)
+    #down.remove_non_finite_points()
+    #down.colors = o3d.utility.Vector3dVector(np.asarray(down.colors)[valid_indices])
     down.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size*2,max_nn=30))
     down_features = o3d.pipelines.registration.compute_fpfh_feature(down, o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size*5, max_nn=100))
     return down, down_features
